@@ -42,7 +42,7 @@ public class Main {
 		}
 
 		// Check if customer already exists
-		qr = findCustomer(null, null, id, LocalDate.now());
+		qr = findCustomer(null, null, null, id, LocalDate.now());
 		if (qr.getStatus() == 0) // 0 means successfully found an entry, which is error in case of AddCustomer
 			// function
 			qr.setStatus(7);
@@ -55,10 +55,10 @@ public class Main {
 		return qr;
 	}
 
-	public static QueryResult findCustomer(String firstName, String lastName, String id, LocalDate date) {
+	public static QueryResult findCustomer(String id, String firstName, String lastName, String pId, LocalDate date) {
 		QueryResult qr = new QueryResult();
-		String query = "Execute FindClient '" + stringNullToEmpty(firstName) + "', '" + stringNullToEmpty(lastName)
-				+ "', '" + stringNullToEmpty(id) + "', '" + date.toString() + "'";
+		String query = "Execute FindClient " + id + ", '" + stringNullToEmpty(firstName) + "', '"
+				+ stringNullToEmpty(lastName) + "', '" + stringNullToEmpty(pId) + "', '" + date.toString() + "'";
 		qr = db.executeQuerywithResultSet(query);
 		try {
 			qr.getResult().beforeFirst();
@@ -68,6 +68,35 @@ public class Main {
 		return qr;
 	}
 
+	public static float getPTI(float income, boolean isHedged, LocalDate date) {
+		QueryResult qr = new QueryResult();
+		String hedged = isHedged ? "1" : "0";
+		String query = "Execute GetPTI " + income + ", '" + hedged + "', '" + date.toString() + "'";
+		qr = db.executeQuerywithResultSet(query);
+		try {
+			qr.getResult().beforeFirst();
+		} catch (SQLException e) {
+			qr.setStatus(4);
+		}
+		return Float.parseFloat(qr.getData().get(0)[0])/100;
+	}
+
+	public static float getProposedIntRate(float score, LocalDate date) {
+		QueryResult qr = new QueryResult();
+		String query = "Execute getProposedIntRate " + score + ", '"  + date.toString() + "'";
+		qr = db.executeQuerywithResultSet(query);
+		try {
+			qr.getResult().beforeFirst();
+		} catch (SQLException e) {
+			qr.setStatus(4);
+		}
+		return Float.parseFloat(qr.getData().get(0)[0]);
+	}
+	
+	public static float getExistingPayment(String customerID, LocalDate date) {
+		return 0;
+	}
+	
 	public static QueryResult getAllScores(String id) {
 		QueryResult qr = new QueryResult();
 		String query = "Execute GetAllScores '" + stringNullToEmpty(id) + "'";
@@ -153,4 +182,5 @@ public class Main {
 		else
 			return s;
 	}
+
 }

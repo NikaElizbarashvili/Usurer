@@ -26,8 +26,8 @@ public class DisplayScoreHistory extends MyDialog {
 		this.setSize(width, height);
 		this.setLocationRelativeTo(owner);
 
-		JPanel panel = new JPanel();
-		panel.setLayout(null);
+//		JPanel panel = new JPanel();
+//		panel.setLayout(null);
 		JButton addScoreButton = new JButton();
 		addScoreButton.setBorder(null);
 		addScoreButton.setFocusable(false);

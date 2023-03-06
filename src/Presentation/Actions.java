@@ -12,8 +12,10 @@ import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
 
+import Business.Customer;
 import Business.Main;
 import Data.QueryResult;
+
 
 public class Actions {
 
@@ -31,7 +33,7 @@ public class Actions {
 	}
 
 	public static void searchCustomer(ActionEvent e, String firstName, String lastName, String id, LocalDate date) {
-		QueryResult qr = Main.findCustomer(firstName, lastName, id, date);
+		QueryResult qr = Main.findCustomer(null, firstName, lastName, id, date);
 		int status = qr.getStatus();
 		if (status != 0) {
 			Errors.showErrorMessage(status);
@@ -42,7 +44,7 @@ public class Actions {
 		new DisplayCustomerResult(Main.frame, "Search result", qr, true);
 	}
 
-	public static void GetAllScores(ActionEvent e, String id) {
+	public static void getAllScores(ActionEvent e, String id) {
 		QueryResult qr = Main.getAllScores(id);
 
 		new DisplayScoreHistory(Main.frame, "Score History", qr, true, id);
@@ -93,4 +95,34 @@ public class Actions {
 			((JDialog) (((JButton) e.getSource()).getParent().getParent().getParent().getParent().getParent()))
 					.dispose();
 	}
+
+	public static void displayNewLoanWindow(ActionEvent e, Customer customer) {
+		QueryResult qr = Main.findCustomer(customer.getCustomerID(), null, null, null, LocalDate.now());
+
+		new NewLoan(Main.frame, "Loan Calculator", qr, true, customer);
+	}
+	
+	public static void calculateLoanTerms(ActionEvent e, Customer customer, float income, boolean isHedged, int term) {
+		float pti = Main.getPTI(income, isHedged, LocalDate.now());
+		float existingPayment = Main.getExistingPayment(customer.getCustomerID(), LocalDate.now());
+		float maxNewPayment = income * pti - existingPayment;
+		float proposedIntRate = Main.getProposedIntRate(customer.getScore(), LocalDate.now());
+		
+//		Finance fin = new Finance ();
+		// unda davitvalo sesxis odenoba!!!!!!
+		
+	}
+	public static Customer getCustomerFromID (String customerID) {
+		QueryResult qr = Main.findCustomer(customerID, null, null, null, LocalDate.now());			
+		String [] data = qr.getData().get(0);
+		String firstName = data[1];
+		String lastName = data[2];
+		String id = data[3];
+		float score =Float.parseFloat (data[4]);
+		float existingPayment = 0;
+		return new Customer(customerID, id, firstName, lastName, score, existingPayment);
+	}
+
 }
+
+
