@@ -6,10 +6,10 @@ public class Customer {
 	private String firstName;
 	private String lastName;
 	private float score;
-	private float existingPayment;
+	private double existingPayment;
 
 	public Customer(String customerID, String id, String firstName, String lastName, float score,
-			float existingPayment) {
+			double existingPayment) {
 		this.customerID = customerID;
 		this.id = id;
 		this.firstName = firstName;
@@ -38,7 +38,7 @@ public class Customer {
 		return score;
 	}
 
-	public float getExistingPayment() {
+	public double getExistingPayment() {
 		return existingPayment;
 	}
 

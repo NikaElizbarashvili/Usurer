@@ -68,7 +68,7 @@ public class Main {
 		return qr;
 	}
 
-	public static float getPTI(float income, boolean isHedged, LocalDate date) {
+	public static float getPTI(double income, boolean isHedged, LocalDate date) {
 		QueryResult qr = new QueryResult();
 		String hedged = isHedged ? "1" : "0";
 		String query = "Execute GetPTI " + income + ", '" + hedged + "', '" + date.toString() + "'";
@@ -93,7 +93,17 @@ public class Main {
 		return Float.parseFloat(qr.getData().get(0)[0]);
 	}
 	
-	public static float getExistingPayment(String customerID, LocalDate date) {
+	public static float getExistingPayment(String id, LocalDate date) {
+		QueryResult qr = new QueryResult();
+		String query = "Execute GetExistingPMT '" + stringNullToEmpty(id) + "'";
+		qr = db.executeQuerywithResultSet(query);
+		float pmt = 0;
+		try {
+			qr.getResult().beforeFirst();
+			pmt = Float.parseFloat(qr.getData().get(0)[1]);
+		} catch (SQLException e) {
+			qr.setStatus(4);
+		}
 		return 0;
 	}
 	

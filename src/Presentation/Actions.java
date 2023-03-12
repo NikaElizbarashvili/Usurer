@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.time.LocalDate;
+import java.util.Vector;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -13,9 +14,9 @@ import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
 
 import Business.Customer;
+import Business.Loan;
 import Business.Main;
 import Data.QueryResult;
-
 
 public class Actions {
 
@@ -51,8 +52,39 @@ public class Actions {
 	}
 
 	public static JScrollPane displaySQLResult(QueryResult qr, PopupType type) {
+		return generateScroll(qr.getColumns(), qr.getData(), type);
+	}
+
+	public static JScrollPane displayLoans(Vector<Loan> loans, PopupType type) {
+		Vector<String> columns = new Vector<>();
+		columns.addElement("Type");
+		columns.addElement("Amount");
+		columns.addElement("Term (M)");
+		columns.addElement("Rate");
+		columns.addElement("Payment");
+		Vector<String[]> data = new Vector<>();
+
+		for (int i = 0; i < loans.size(); i++) {
+			String[] loanData = new String[5];
+			if (i == 0)
+				loanData[0] = "Maximum";
+			else if (i == 1)
+				loanData[0] = "Requested 1";
+			else if (i == 2)
+				loanData[0] = "Requested 2";
+			loanData[1] = Double.toString(loans.get(i).getAmount());
+			loanData[2] = Integer.toString(loans.get(i).getMaturity());
+			loanData[3] = Float.toString(loans.get(i).getRate());
+			loanData[4] = Double.toString(loans.get(i).getPmt());
+			data.addElement(loanData);
+		}
+
+		return generateScroll(columns, data, type);
+	}
+
+	private static JScrollPane generateScroll(Vector<String> columns, Vector<String[]> data, PopupType type) {
 		DefaultTableModel model = new DefaultTableModel();
-		model.setColumnIdentifiers(qr.getColumns());
+		model.setColumnIdentifiers(columns);
 		JTable table = new JTable() {
 			public boolean isCellEditable(int rowIndex, int colIndex) {
 				return false; // Disallow the editing of any cell
@@ -63,8 +95,8 @@ public class Actions {
 		JScrollPane scroll = new JScrollPane(table);
 		scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-		for (int i = 0; i < qr.getData().size(); i++)
-			model.addRow(qr.getData().get(i));
+		for (int i = 0; i < data.size(); i++)
+			model.addRow(data.get(i));
 //		table.setComponentPopupMenu(new CustomerPopupMenu());
 		table.addMouseListener(new MouseAdapter() {
 			public void mousePressed(MouseEvent e) {
@@ -76,7 +108,7 @@ public class Actions {
 				}
 				String id = (String) model.getValueAt(r, 0);
 				if (SwingUtilities.isRightMouseButton(e))
-					table.setComponentPopupMenu(new CustomerPopupMenu(type, id));
+					table.setComponentPopupMenu(new MyPopupMenu(type, id));
 //				System.out.println(id);
 			}
 		});
@@ -99,30 +131,60 @@ public class Actions {
 	public static void displayNewLoanWindow(ActionEvent e, Customer customer) {
 		QueryResult qr = Main.findCustomer(customer.getCustomerID(), null, null, null, LocalDate.now());
 
-		new NewLoan(Main.frame, "Loan Calculator", qr, true, customer);
+		new NewLoanInput(Main.frame, "Loan Calculator", qr, true, customer);
+	}
+
+	public static void calculateLoanTerms(ActionEvent e, Customer customer, double income, double requestedAmount,
+			boolean isHedged, int term) {
+		if ((term <= 0) || (income <= 0) || (requestedAmount < 0)) {
+			Errors.showErrorMessage(9, null, null);
+			return;
+		}
+
+		float pti = Main.getPTI(income, isHedged, LocalDate.now());
+		double existingPayment = customer.getExistingPayment();
+		double maxNewPayment = Math.round((income * pti - existingPayment) * 100.0) / 100.0;
+		if (maxNewPayment <= 0) {
+			Errors.showErrorMessage(10, null, null);
+			return;
+		}
+		float proposedIntRate = Main.getProposedIntRate(customer.getScore(), LocalDate.now());
+		double loanAmount = Math.round(
+				maxNewPayment * (1 - Math.pow((1 + proposedIntRate / 12 / 100), -term)) / (proposedIntRate / 12 / 100));
+
+		Vector<Loan> loans = new Vector<Loan>();
+		loans.addElement(new Loan(loanAmount, term, proposedIntRate, maxNewPayment));
+
+		if (requestedAmount > 0) {
+			double pmt;
+			pmt = Math.round((requestedAmount * (proposedIntRate / 12 / 100)
+					/ (1 - Math.pow((1 + proposedIntRate / 12 / 100), -term))) * 100.0) / 100.0;
+			if (pmt <= maxNewPayment)
+				loans.addElement(new Loan(requestedAmount, term, proposedIntRate, pmt));
+			int t = (int) Math.ceil(-Math.log10(1 - requestedAmount * (proposedIntRate / 12 / 100) / maxNewPayment)
+					/ Math.log10(1 + proposedIntRate / 12 / 100));
+			if (t > 0) {
+				pmt = Math.round((requestedAmount * (proposedIntRate / 12 / 100)
+						/ (1 - Math.pow((1 + proposedIntRate / 12 / 100), -t))) * 100.0) / 100.0;
+				loans.addElement(new Loan(requestedAmount, t, proposedIntRate, pmt));
+			}
+		}
+		new DisplayLoan(Main.frame, "Available Loan", loans, true);
+	}
+
+	public static void issueLoan(ActionEvent e, String id) {
+		
 	}
 	
-	public static void calculateLoanTerms(ActionEvent e, Customer customer, float income, boolean isHedged, int term) {
-		float pti = Main.getPTI(income, isHedged, LocalDate.now());
-		float existingPayment = Main.getExistingPayment(customer.getCustomerID(), LocalDate.now());
-		float maxNewPayment = income * pti - existingPayment;
-		float proposedIntRate = Main.getProposedIntRate(customer.getScore(), LocalDate.now());
-		
-//		Finance fin = new Finance ();
-		// unda davitvalo sesxis odenoba!!!!!!
-		
-	}
-	public static Customer getCustomerFromID (String customerID) {
-		QueryResult qr = Main.findCustomer(customerID, null, null, null, LocalDate.now());			
-		String [] data = qr.getData().get(0);
+	public static Customer getCustomerFromID(String customerID) {
+		QueryResult qr = Main.findCustomer(customerID, null, null, null, LocalDate.now());
+		String[] data = qr.getData().get(0);
 		String firstName = data[1];
 		String lastName = data[2];
 		String id = data[3];
-		float score =Float.parseFloat (data[4]);
-		float existingPayment = 0;
+		float score = Float.parseFloat(data[4]);
+		double existingPayment = Math.round(Double.parseDouble(data[6]) * 100.0) / 100.0;
 		return new Customer(customerID, id, firstName, lastName, score, existingPayment);
 	}
 
 }
-
-

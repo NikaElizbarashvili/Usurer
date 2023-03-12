@@ -8,6 +8,5 @@
 	</classpathentry>
 	<classpathentry kind="lib" path="C:/Program Files/Microsoft JDBC DRIVER 11.2 for SQL Server/sqljdbc_11.2/enu/mssql-jdbc-11.2.0.jre18.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Nika/eclipse-workspace/Usurer/lib/jcalendar-1.4.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Nika/eclipse-workspace/Usurer/lib/corda-finance-3.4-corda.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -47,7 +47,11 @@ public class Errors {
 		case 9:
 			message =  "Input out of range";
 			messageType=JOptionPane.ERROR_MESSAGE;
-			break;	
+			break;
+		case 10:
+			message = "No new loan available";
+			messageType=JOptionPane.ERROR_MESSAGE;
+			break;			
 		default :
 			message = "Default";
 			messageType=JOptionPane.PLAIN_MESSAGE;
